@@ -26,7 +26,7 @@
 
 #define PI 3.14159
 #define STAR_NO 1000
-#define PART_NO 100000
+#define PART_NO 10000
 #define MASS_PART_NO 1
 #define G 1.0
 #define TIME 1.0
@@ -40,6 +40,8 @@ int axisEnabled= 1;
 int star_radius = 200000;
 int current_time = 0;
 bool pause = false;
+
+GLuint fuzzyTexture;
 
 int left_right = 0;
 float lookdistance = 30000.0;
@@ -93,8 +95,8 @@ void calcParticleValues() {
 
 
 
-				particles[i].g = r / 100;
-				particles[i].b = r / 100;
+				particles[i].g = r / 1000;
+				particles[i].b = r / 1000;
 	
 			//calculate new velocity according to acceleration (force)
 			//some velocity is taken away to simulate orbit decay
@@ -217,27 +219,39 @@ void initParticles() {
 
 void drawParticles() {
 
+     glBindTexture(GL_TEXTURE_2D, fuzzyTexture);
+     glEnable(GL_TEXTURE_2D);
+     glEnable(GL_BLEND);
+     glBlendFunc(GL_ONE, GL_ONE);
+     glDepthMask(GL_FALSE);
+     glDisable(GL_DEPTH_TEST);
+
 	//draw particles
-	glPointSize(1.0f);
+	glPointSize(50.0f);
 	glBegin(GL_POINTS);
 	int i;
 
 	for(i = 0; i < PART_NO; i++) {
 		if(particles[i].alive) {
-			//glColor3f(particles[i].r, particles[i].g, particles[i].b);
+			glColor3f(particles[i].r, particles[i].g, particles[i].b);
 			glVertex3f(particles[i].x, particles[i].y, particles[i].z);
 		}
 	}
 	glEnd();
 	//draw massive particles
-	glPointSize(10.0f);
+	glPointSize(20.0f);
 	glBegin(GL_POINTS);
 
 	for(i = 0; i < MASS_PART_NO; i++) {
-		//glColor3f(mass_paritcles[i].r, mass_paritcles[i].g, mass_paritcles[i].b);
+		glColor3f(mass_paritcles[i].r, mass_paritcles[i].g, mass_paritcles[i].b);
 		glVertex3f(mass_paritcles[i].x, mass_paritcles[i].y, mass_paritcles[i].z);
 	}
 	glEnd();
+
+	 glEnable(GL_DEPTH_TEST);
+     glDepthMask(GL_TRUE);
+     glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
 }
 
 ///////////////////////////////////////////////
@@ -283,7 +297,31 @@ void animate(void)
   }
 }
 
-///////////////////////////////////////////////
+void drawTexturedRect(int x, int y, int w, int h, GLuint texture){
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glBegin(GL_QUADS);
+        glColor3f(255,255,255);
+        glTexCoord2f(0,0);
+        glVertex2f(x,y);
+        glTexCoord2f(1,0);
+        glVertex2f(x+w,y);
+        glTexCoord2f(0,1);
+        glVertex2f(x,y+h);
+        glTexCoord2f(1,1);
+        glVertex2f(x+w,y+h);
+        glTexCoord2f(0,1);
+        glVertex2f(x,y+h);
+    glEnd();
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
 
 void display()
 {
@@ -302,6 +340,8 @@ void display()
   	drawStarfield();
   	drawParticles();
   glPopMatrix();
+
+  drawTexturedRect(0, 1000, 5000, 5000, fuzzyTexture);
 
   glutSwapBuffers();
 }
@@ -366,7 +406,12 @@ void initGraphics(int argc, char *argv[])
   glutKeyboardFunc(keyboard);
   glutReshapeFunc(reshape);
 
+//http://gamedev.stackexchange.com/questions/9336/how-do-i-draw-a-point-sprite-using-opengl-es-on-android
+  glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+
+  glEnable(GL_ALPHA_TEST);
   glEnable(GL_DEPTH_TEST);
+  glAlphaFunc(GL_GREATER, 0);
  
 //  glEnable(GL_BLEND);
 // glDepthMask(GL_FALSE);
@@ -375,7 +420,19 @@ void initGraphics(int argc, char *argv[])
   makeAxes();
 }
 
-/////////////////////////////////////////////////
+//Code from (17-Oct-2016)
+//http://stackoverflow.com/questions/16927442/loading-texture-using-soils-ogl-function-and-opengl
+void loadTexture(GLuint* texture, char* filename){
+    *texture = SOIL_load_OGL_texture(filename,
+                                     SOIL_LOAD_AUTO,
+                                     SOIL_CREATE_NEW_ID,
+                                     //SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
+                                     SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_MULTIPLY_ALPHA
+                                    );
+    if(texture == NULL){
+        printf("[Texture loader] \"%s\" failed to load!\n", filename);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -388,31 +445,7 @@ int main(int argc, char *argv[])
   //glEnable(GL_POINT_SMOOTH);
   glEnable(GL_POINT_SPRITE);
 
-  //Code from (14-Oct-16)
-  //taken from http://www.lonesock.net/soil.html
-  GLuint textureID = SOIL_load_OGL_texture
-  (
-	"fadedsprite.jpg",
-	SOIL_LOAD_AUTO,
-	SOIL_CREATE_NEW_ID,
-	SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT
-  );
-
-  /* check for an error during the load process */
-  if( 0 == textureID )
-  {
-	printf( "SOIL loading error: '%s'\n", SOIL_last_result() );
-  }
-
-  //Code from (14-Oct-16)
-  //http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
-  glBindTexture(GL_TEXTURE_2D, textureID);
-  glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-glBegin(GL_POINTS);
-  glPointSize(100);
-glVertex3f(0, 1000, 0);
-glEnd();
-
+  loadTexture(&fuzzyTexture, "firep.png");
 
   glutIdleFunc (animate);
 
