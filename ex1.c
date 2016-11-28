@@ -1,4 +1,6 @@
 ////////////////////////////////////////////////////////////////
+// Adapted From:
+//
 // School of Computer Science
 // The University of Manchester
 //
@@ -32,13 +34,8 @@
 #define PART_MASS_RANGE 1000
 #define MAX_CAMERA 1000000
 
-// Display list for coordinate axis 
-GLuint axisList;
-
-GLint AXIS_SIZE= 500;
 int renderMode = 3;
 int star_radius = 2000000;
-int current_time = 0;
 bool pause = true;
 double TIME  = 0.3;
 bool perspective = false;
@@ -68,17 +65,13 @@ bool alive;
 particle* particles;
 particle mass_paritcles[MASS_PART_NO];
 
-float myRand (void)
-{
-/* return a random float in the range [0,1] */
-
+float myRand (void) {
   return ((float) rand() / RAND_MAX);
 }
 
 float distance(float xa, float ya, float za, float xb, float yb, float zb) {
   return sqrt(pow(xb-xa, 2.0) + pow(yb-ya, 2.0) + pow(zb-za, 2.0));
 }
-
 
 void calcParticleValues() {
   int i;
@@ -106,42 +99,39 @@ void calcParticleValues() {
       for(j = 0; j < MASS_PART_NO; j++) {
 
 //check if particle is too close to mass(is destoryed if so)
-//approximated to a cube
         if(distance(mass_paritcles[j].x, mass_paritcles[j].y, mass_paritcles[j].z, particles[i].x, particles[i].y, particles[i].z) < log(mass_paritcles[j].mass) * 400) {
           particles[i].alive = false;
           continue;
-      }
+        }
 
 //calculate distance between the objects
-      diffX = mass_paritcles[j].x - particles[i].x;
-      diffY = mass_paritcles[j].y - particles[i].y;
-      diffZ = mass_paritcles[j].z - particles[i].z;
+        diffX = mass_paritcles[j].x - particles[i].x;
+        diffY = mass_paritcles[j].y - particles[i].y;
+        diffZ = mass_paritcles[j].z - particles[i].z;
 
-      r = sqrt(pow(diffX, 2.0) + pow(diffY, 2.0) + pow(diffZ, 2.0));
+        r = sqrt(pow(diffX, 2.0) + pow(diffY, 2.0) + pow(diffZ, 2.0));
 
-      force = (G * mass_paritcles[j].mass * particles[i].mass) / r;
-      particles[i].Au += (diffX / r * force) / particles[i].mass;
-      particles[i].Av += (diffY / r * force) / particles[i].mass;
-      particles[i].Aw += (diffZ / r * force) / particles[i].mass;
-    }
+        force = (G * mass_paritcles[j].mass * particles[i].mass) / r;
+        particles[i].Au += (diffX / r * force) / particles[i].mass;
+        particles[i].Av += (diffY / r * force) / particles[i].mass;
+        particles[i].Aw += (diffZ / r * force) / particles[i].mass;
+      }
 
-    particles[i].g = v / 1000.0;
-    particles[i].b = v / 1000.0;
+      particles[i].g = v / 1000.0;
+      particles[i].b = v / 1000.0;
 
 //calculate new velocity according to acceleration (force)
 //take off some velocity to decay orbits
-    //heavier objects decay a bit more
-    particles[i].u += particles[i].Au * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
-    particles[i].v += particles[i].Av * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
-    particles[i].w += particles[i].Aw * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
+//heavier objects decay a bit more
+      particles[i].u += particles[i].Au * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
+      particles[i].v += particles[i].Av * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
+      particles[i].w += particles[i].Aw * particles[i].mass/(PART_MASS_RANGE*4) * TIME;
+    }
   }
-}
 }
 
 void drawParticles() {
-
   if(renderMode == 1) {
-    //glBindTexture(GL_TEXTURE_2D, fuzzyTexture);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
@@ -149,9 +139,7 @@ void drawParticles() {
     glDisable(GL_DEPTH_TEST);
   }
 
-//draw particles
   int i;
-
   for(i = 0; i < PART_NO; i++) {
     if(particles[i].alive) {
       if(renderMode == 1) {
@@ -208,18 +196,6 @@ void drawParticles() {
   }
 }
 
-void randPointOnSphere(float Cx, float Cy, float Cz, float r, float* x, float* y, float* z) {
-  float inclination;
-  float azimuth;
-
-  inclination = myRand() * PI;
-  azimuth = myRand() * 2 * PI;
-
-  *x = r * sin(inclination) * cos(azimuth) + Cx; 
-  *y = r * sin(inclination) * sin(azimuth) + Cy;
-  *z = r * cos(inclination) + Cz;
-}
-
 void randPointInSphere(float Cx, float Cy, float Cz, float r, float* x, float* y, float* z) {
   float inclination;
   float azimuth;
@@ -233,15 +209,11 @@ void randPointInSphere(float Cx, float Cy, float Cz, float r, float* x, float* y
 }
 
 void initParticles() {
-
   particles = (particle*) malloc(sizeof(particle) * PART_NO);
 
   int i;
   for(i = 0; i < PART_NO; i++) {
-
     randPointInSphere(0.0, 20000.0, 0.0, 8000, &particles[i].x, &particles[i].y, &particles[i].z);
-
-//randPointOnSphere(0, 0, 0, 5000, &particles[i].x, &particles[i].y, &particles[i].z);
 
     particles[i].u = 0.0;
     particles[i].v = -300.0;
@@ -284,16 +256,12 @@ void initParticles() {
 }
 
 void resetParticles() {
-
   free(particles);
   PART_NO = newPartNo;
   particles = (particle*) malloc(sizeof(particle) * PART_NO);
   int i;
   for(i = 0; i < PART_NO; i++) {
-
     randPointInSphere(0.0, 20000.0, 0.0, 8000, &particles[i].x, &particles[i].y, &particles[i].z);
-
-//randPointOnSphere(0, 0, 0, 20000, &particles[i].x, &particles[i].y, &particles[i].z);
 
     particles[i].u = 0.0;
     particles[i].v = -300.0;
@@ -313,10 +281,6 @@ void resetParticles() {
   }
 }
 
-///////////////////////////////////////////////
-
-/*****************************/
-
 void initStarCoords(void) {
   int i;
   float inclination;
@@ -332,8 +296,7 @@ void initStarCoords(void) {
 }
 
 //taken from previous years lab ex2
-void drawStarfield (void)
-{
+void drawStarfield (void) {
   glPointSize(1.0f);
   glBegin(GL_POINTS);
   glColor3f(1.0f, 1.0f, 1.0f);
@@ -342,16 +305,13 @@ void drawStarfield (void)
   for(i = 0; i < STAR_NO; i++) {
     glVertex3f(star_coods[i][0], star_coods[i][1], star_coods[i][2]);
   }
-
   glEnd();
 }
 
-void animate(void)
-{
+void animate(void) {
   if(!pause) {
     calcParticleValues();
     glutPostRedisplay();
-    current_time++;
   }
 }
 
@@ -363,12 +323,10 @@ void drawTextInfo() {
   char intToString[20] = {};
   char message[300] = {};
 
-  if(pause) {
+  if(pause)
     strcat(message, "PAUSED (p)\n\n");    
-  }
-  else {
+  else
     strcat(message, "UNPAUSED (p)\n\n");
-  }
 
   sprintf(intToString, "%d", newPartNo);
   strcat(message, "Particle Number (n): ");
@@ -424,8 +382,6 @@ void display()
   glutSwapBuffers();
 }
 
-///////////////////////////////////////////////
-
 void keyboard(unsigned char key, int x, int y)
 {
   if(key == 27) exit(0);
@@ -467,32 +423,30 @@ void keyboard(unsigned char key, int x, int y)
       if(mass_paritcles[j].mass > 50000.0)
         mass_paritcles[j].mass = mass_paritcles[j].mass - 50000.0;
 
-  }
-  if(key == 'M') {
-  int j;
-  for(j = 0; j < MASS_PART_NO; j++)
-    mass_paritcles[j].mass = mass_paritcles[j].mass + 50000.0;
+    }
+    if(key == 'M') {
+      int j;
+      for(j = 0; j < MASS_PART_NO; j++)
+        mass_paritcles[j].mass = mass_paritcles[j].mass + 50000.0;
 
-  }
-  if(key == 't') {
-    if(TIME > 0.05) TIME = TIME - 0.05;
-  }
-  if(key == 'T') {
-    if(TIME < 1.0) TIME = TIME + 0.05;
-  }
-  if(key == 'c') perspective = !perspective;
-  if(key == 'n' && pause && newPartNo > 2) {
-    newPartNo /= 2;
-    resetParticles();
-  }
-  if(key == 'N' && pause) {
-    newPartNo *= 2;
-    resetParticles();
-  }
-  glutPostRedisplay();
+    }
+    if(key == 't') {
+      if(TIME > 0.05) TIME = TIME - 0.05;
+    }
+    if(key == 'T') {
+      if(TIME < 1.0) TIME = TIME + 0.05;
+    }
+    if(key == 'c') perspective = !perspective;
+    if(key == 'n' && pause && newPartNo > 2) {
+      newPartNo /= 2;
+      resetParticles();
+    }
+    if(key == 'N' && pause) {
+      newPartNo *= 2;
+      resetParticles();
+    }
+    glutPostRedisplay();
 }
-
-///////////////////////////////////////////////
 
 void reshape(int width, int height)
 {
@@ -504,7 +458,6 @@ void reshape(int width, int height)
   glMatrixMode(GL_MODELVIEW);
 }
 
-///////////////////////////////////////////////
 void initGraphics(int argc, char *argv[])
 {
   glutInit(&argc, argv);
