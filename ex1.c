@@ -19,6 +19,11 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+
+//Simple OpenGL Image Library
+//Downloaded from http://www.lonesock.net/soil.html
+//Last accessed 29 Nov 16
+//License: Public Domain
 #include "SOIL.h"
 
 #ifdef MACOSX
@@ -34,7 +39,7 @@
 #define PART_MASS_RANGE 1000
 #define MAX_CAMERA 1000000
 
-int renderMode = 3;
+int renderMode = 4;
 int star_radius = 2000000;
 bool pause = true;
 double TIME  = 0.3;
@@ -49,7 +54,7 @@ float cameraZ;
 
 int cameraLat = 90;
 int cameraLon = 0;
-int cameraRadius = 90000;
+int cameraRadius = 150000;
 
 GLfloat star_coods[STAR_NO][3];
 
@@ -146,7 +151,7 @@ void drawParticles() {
         if(perspective)
           glPointSize(6000000.0/(distance(cameraX, cameraY, cameraZ, particles[i].x, particles[i].y, particles[i].z)*5));
         else
-          glPointSize(20.0);
+          glPointSize(5.0);
         glBegin(GL_POINTS);
         glColor3f(particles[i].r, particles[i].g, particles[i].b);
         glVertex3f(particles[i].x, particles[i].y, particles[i].z);
@@ -160,6 +165,14 @@ void drawParticles() {
         glVertex3f(particles[i].x + particles[i].u*2, particles[i].y + particles[i].v*2, particles[i].z + particles[i].w*2);
         glEnd();
 
+      }
+      else if(renderMode == 3) {
+      	glMatrixMode(GL_MODELVIEW);
+      	glPushMatrix();
+      	glColor3f(particles[i].r, particles[i].g, particles[i].b);
+      	glTranslatef(particles[i].x, particles[i].y, particles[i].z);
+      	glutSolidSphere(100.0f, 12, 6);
+      	glPopMatrix();
       }
       else {
         if(perspective)
@@ -349,9 +362,18 @@ void drawTextInfo() {
   else
     strcat(message, "OFF\n");
 
+  strcat(message, "Render Mode(g): ");
+  if(renderMode == 1)
+  	strcat(message, "Texture\n");
+  else if(renderMode == 2)
+  	strcat(message, "Lines\n");
+  else if(renderMode == 3)
+  	strcat(message, "Sphere\n");
+  else
+  	strcat(message, "Points\n");
+
   strcat(message, "\nSPACE to reset\n");
   strcat(message, "\np to pause, required to change particle number\n");
-  strcat(message, "\nPress g to change particle type\n");
   strcat(message, "Use UPPERCASE to increase values\n");
   strcat(message, "w a s d to move \n");
   strcat(message, "z x to zoom\n");
@@ -410,12 +432,12 @@ void keyboard(unsigned char key, int x, int y)
       cameraRadius = -1*MAX_CAMERA;
   }
   if(key == 'g') {
-    renderMode = (renderMode + 1) % 3;
+    renderMode = (renderMode + 1) % 4;
 
     if(renderMode == 1)
       glEnable(GL_POINT_SPRITE);
     else
-      glEnable(GL_POINT_SPRITE);
+      glEnable(GL_POINT);
   }
   if(key == 'm') {
     int j;
@@ -474,13 +496,14 @@ void initGraphics(int argc, char *argv[])
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_DEPTH_TEST);
 
-  glEnable(GL_POINT_SPRITE);
+  glEnable(GL_POINT);
 
   glAlphaFunc(GL_GREATER, 0);
 }
 
-//Code from (17-Oct-2016)
-//http://stackoverflow.com/questions/16927442/loading-texture-using-soils-ogl-function-and-opengl
+//Code from http://stackoverflow.com/questions/16927442/loading-texture-using-soils-ogl-function-and-opengl
+//Accessed: (17-Oct-2016)
+//License: CC-BY-SA
 void loadTexture(GLuint* texture, char* filename){
   *texture = SOIL_load_OGL_texture(filename,
     SOIL_LOAD_AUTO,
