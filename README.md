@@ -1,1 +1,1 @@
-[!Alt Text](https://thumbs.gfycat.com/UnhealthyImmaterialAdamsstaghornedbeetle-size_restricted.gif)
+![Alt Text](https://thumbs.gfycat.com/UnhealthyImmaterialAdamsstaghornedbeetle-size_restricted.gif)
